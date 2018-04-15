@@ -1,9 +1,7 @@
+#!/usr/bin/python
 
-import requests
 import sys
 from PyLyrics import *
-import os
-import re
 import subprocess
 import time
 
@@ -18,21 +16,20 @@ args = parser.parse_args()
 
 # Prints if verbose above that level
 def printV(text):
+    if (args.verbose == None):
+        return
     if (args.verbose >= 1):
         print("*** " + str(text))
 
+# Exec a command by subprocess and returns it's return value
+def getReturnFromProc(cmd):
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout
+    return result.decode(sys.getdefaultencoding()).replace('\n', '')
+
 # Retorna a música e o arista tocando no momento
 def getCurrentPlayingSongAndArtist():
-    song, artist = '', ''
-    ## Salva nome do artista
-    os.system('mpc -f %artist% current > artist.txt')
-    with open('artist.txt', 'r') as myfile:
-        artist = myfile.read().replace('\n', '')
-
-    ## Salva nome da Musica
-    os.system('mpc -f %title% current > song.txt')
-    with open('song.txt', 'r') as myfile:
-        song = myfile.read().replace('\n', '')
+    artist = getReturnFromProc('mpc -f %artist% current')
+    song = getReturnFromProc('mpc -f %title% current')
     return [song, artist]
 
 # Busca e printa a letra de uma música dado o artista
@@ -40,15 +37,15 @@ def printLyrics(song, artist):
     # Limpa a tela e printa o nome da música
     if (args.verbose == 0):
         os.system('clear')
-    print("\n\n\n")
     print("Current Song: '" + str(song) + "' - Current Artist: '" + str(artist) + "'.\n")
 
     lyrics = ''
     try:
         lyrics = PyLyrics.getLyrics(artist,song)
-    except TypeError:
+    except TypeError as e:
         lyrics = 'Song or Artist not found'
-    except:
+    except Exception as e:
+        print(e)
         lyrics = 'A error ocurred, sorry.'
     # Printa letra da musica
     print(lyrics)
